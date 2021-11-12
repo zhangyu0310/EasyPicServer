@@ -1,0 +1,3 @@
+# EasyPicServer
+
+For setu Server.
