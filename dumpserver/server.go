@@ -35,7 +35,11 @@ func Run() {
 		fmt.Println("Dump server start failed.", err)
 		os.Exit(1)
 	}
-	server := grpc.NewServer()
+	options := []grpc.ServerOption{
+		grpc.MaxRecvMsgSize(31457280),
+		grpc.MaxSendMsgSize(31457280),
+	}
+	server := grpc.NewServer(options...)
 	picdump.RegisterCourierServer(server, &dumpServer{})
 
 	reflection.Register(server)
