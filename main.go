@@ -27,6 +27,7 @@ func main() {
 		flag.Usage()
 		os.Exit(0)
 	}
+	config.InitializeConfig(cmdConfigSetToGlobal)
 	// Start dump server
 	dumpserver.Run()
 	// Start web server
