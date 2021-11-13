@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+	"io/ioutil"
 	"net"
 	"os"
 	"strconv"
@@ -17,14 +18,11 @@ type dumpServer struct{}
 func (ds *dumpServer) SendPic(ctx context.Context, req *picdump.PicRequest) (*picdump.PicReply, error) {
 	var reply picdump.PicReply
 	reply.Message = "Success."
-	picFile, err := os.OpenFile("./pic/"+req.GetPicName(), os.O_WRONLY|os.O_CREATE, 0666)
+	err := ioutil.WriteFile("./pic/"+req.GetPicName(), req.Pic, 0666)
 	if err != nil {
-		reply.Message = "Open pic file failed."
+		reply.Message = "Write pic file failed."
 		return &reply, err
 	}
-	defer func(file *os.File) {
-		_ = file.Close()
-	}(picFile)
 	return &reply, nil
 }
 
