@@ -1,6 +1,10 @@
 package config
 
 import (
+	"easyPicServer/encrypt"
+	"fmt"
+	"github.com/tealeg/xlsx"
+	"os"
 	"sync/atomic"
 )
 
@@ -8,6 +12,16 @@ import (
 type Config struct {
 	WebPort  int
 	DumpPort int
+	EffectiveDur int64
+	QaFilePath string
+	QaMap    map[int]QATable
+	Encryption encrypt.Encryption
+}
+
+type QATable struct {
+	Id       int
+	Question string
+	Answers  []string
 }
 
 var (
@@ -19,6 +33,7 @@ func InitializeConfig(enforceCmdArgs func(*Config)) {
 	cfg := Config{}
 	// Use command config cover config file.
 	enforceCmdArgs(&cfg)
+	InitQaMapFromExcel(&cfg)
 	StoreGlobalConfig(&cfg)
 }
 
@@ -32,4 +47,37 @@ func GetGlobalConfig() *Config {
 // StoreGlobalConfig stores a new config to the globalConf. It mostly uses in the test to avoid some data races.
 func StoreGlobalConfig(config *Config) {
 	globalConf.Store(config)
+}
+
+func InitQaMapFromExcel(config *Config) {
+	xlFile, err := xlsx.OpenFile(config.QaFilePath)
+	if err != nil {
+		fmt.Println("Open QA Table failed.", err)
+		os.Exit(1)
+	}
+	sheet := xlFile.Sheets[0]
+	if sheet == nil {
+		fmt.Println("First sheet is nil.")
+		os.Exit(1)
+	}
+	config.QaMap = make(map[int]QATable)
+	for i, row := range sheet.Rows {
+		if i == 0 {
+			continue
+		}
+		id, err := row.Cells[0].Int()
+		if err != nil {
+			fmt.Println("Get Question ID failed.")
+			os.Exit(1)
+		}
+		var answers []string
+		for i := 2; i < len(row.Cells); i++ {
+			answer := row.Cells[i].String()
+			if answer != "" {
+				answers = append(answers, answer)
+			}
+		}
+		table := QATable{Id: id, Question: row.Cells[1].String(), Answers: answers}
+		config.QaMap[id] = table
+	}
 }

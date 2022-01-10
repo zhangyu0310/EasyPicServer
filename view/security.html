@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ .title }}</title>
+</head>
+<body>
+<h1>{{ .label }}</h1>
+
+<form action="{{ .pic }}/{{ .sCode }}" method="post">
+    Question: {{ .question }} <br>
+    Answer: <input type="text" name="answer" /> <br>
+    sCode(If you have): <input type="text" name="oldsCode" /> <br>
+    <input type="submit" value="Submit" />
+</form>
+
+</body>
+</html>
