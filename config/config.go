@@ -10,12 +10,13 @@ import (
 
 // Config Configurations of server.
 type Config struct {
-	WebPort  int
-	DumpPort int
+	WebPort      int
+	DumpPort     int
 	EffectiveDur int64
-	QaFilePath string
-	QaMap    map[int]QATable
-	Encryption encrypt.Encryption
+	QaFilePath   string
+	QaMap        map[int]QATable
+	Encryption   encrypt.Encryption
+	DBPath       string
 }
 
 type QATable struct {

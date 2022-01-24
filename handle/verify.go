@@ -19,6 +19,7 @@ type Verified struct {
 	TimeStamp int64
 	sCode     string
 }
+
 var TimeQueue = make([]Verified, 10)
 
 func CleanTimeUpVerifiedInfo() {
@@ -29,7 +30,7 @@ func CleanTimeUpVerifiedInfo() {
 			now := time.Now().Unix()
 			VerifiedMapMutex.Lock()
 			for i, v := range TimeQueue {
-				if v.TimeStamp + cfg.EffectiveDur > now {
+				if v.TimeStamp+cfg.EffectiveDur > now {
 					TimeQueue = TimeQueue[i:]
 					break
 				}
@@ -50,12 +51,12 @@ func GenerateQuestion(context *gin.Context) {
 		context.String(http.StatusInternalServerError, "加密出现BUG，耶稣来了也进不去，我说的！")
 		return
 	}
-	context.HTML(http.StatusOK, "security.html", gin.H {
-		"title": "Security",
-		"label": "You need answer the question!",
+	context.HTML(http.StatusOK, "security.html", gin.H{
+		"title":    "Security",
+		"label":    "You need answer the question!",
 		"question": question.Question,
-		"pic": context.Param("pic"),
-		"sCode": ciphertext,
+		"pic":      context.Param("pic"),
+		"sCode":    ciphertext,
 	})
 }
 
@@ -65,7 +66,7 @@ func tableCheckMatch(sCode, answer, oldSCode string) bool {
 	VerifiedMapMutex.Lock()
 	defer VerifiedMapMutex.Unlock()
 	if oldTime, ok := VerifiedMap[oldSCode]; ok {
-		return oldTime + cfg.EffectiveDur > now
+		return oldTime+cfg.EffectiveDur > now
 	}
 	plaintext, err := cfg.Encryption.DecryptFromBase64(sCode)
 	if err != nil {
@@ -76,7 +77,7 @@ func tableCheckMatch(sCode, answer, oldSCode string) bool {
 	if err != nil {
 		return false
 	}
-	if timestamp + cfg.EffectiveDur < now {
+	if timestamp+cfg.EffectiveDur < now {
 		return false
 	}
 	r, err := strconv.Atoi(texts[0])

@@ -23,7 +23,7 @@ func pkcs7Padding(cipherText []byte, blockSize int) []byte {
 	return append(cipherText, padText...)
 }
 
-func (encryption *Aes)Encrypt(originData []byte) ([]byte, error) {
+func (encryption *Aes) Encrypt(originData []byte) ([]byte, error) {
 	//创建加密算法的实例
 	block, err := aes.NewCipher(encryption.PrivateKey)
 	if err != nil {
@@ -46,7 +46,7 @@ func (encryption *Aes)Encrypt(originData []byte) ([]byte, error) {
 	return encrypted, nil
 }
 
-func (encryption *Aes)EncryptAndBase64(pwd []byte) (string, error) {
+func (encryption *Aes) EncryptAndBase64(pwd []byte) (string, error) {
 	//进行aes加密
 	result, err := encryption.Encrypt(pwd)
 	if err != nil {
@@ -69,7 +69,7 @@ func pkcs7UnPadding(originData []byte) ([]byte, error) {
 	return originData[:(length - unPadding)], nil
 }
 
-func (encryption *Aes)Decrypt(encrypted []byte) ([]byte, error) {
+func (encryption *Aes) Decrypt(encrypted []byte) ([]byte, error) {
 	//创建加密算法的实例
 	block, err := aes.NewCipher(encryption.PrivateKey)
 	if err != nil {
@@ -90,7 +90,7 @@ func (encryption *Aes)Decrypt(encrypted []byte) ([]byte, error) {
 	return originData, nil
 }
 
-func (encryption *Aes)DecryptFromBase64(pwd string) ([]byte, error) {
+func (encryption *Aes) DecryptFromBase64(pwd string) ([]byte, error) {
 	pwdByte, err := base64.RawURLEncoding.DecodeString(pwd)
 	if err != nil {
 		return nil, err

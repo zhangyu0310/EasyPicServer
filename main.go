@@ -2,11 +2,15 @@ package main
 
 import (
 	"easyPicServer/config"
-	"easyPicServer/dumpserver"
 	"easyPicServer/encrypt/aes"
 	"easyPicServer/handle"
+	"easyPicServer/store"
+	ldb "easyPicServer/store/leveldb"
+	"easyPicServer/transmit"
 	"flag"
+	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/syndtr/goleveldb/leveldb"
 	"math/rand"
 	"os"
 	"strconv"
@@ -14,11 +18,12 @@ import (
 )
 
 var (
-	webPort  = flag.Int("web-port", 8888, "Port of web server")
-	dumpPort = flag.Int("dump-port", 9999, "Port of dump server")
+	webPort      = flag.Int("web-port", 8888, "Port of web server")
+	dumpPort     = flag.Int("dump-port", 9999, "Port of dump server")
 	effectiveDur = flag.Int64("effective-duration", 300, "sCode effective duration. (second)")
-	qaTableFile = flag.String("qa-table-file", "./QATable.xlsx", "QA Table file")
-	keyFile = flag.String("key-file", "./key", "Key file for encryption")
+	qaTableFile  = flag.String("qa-table-file", "./QATable.xlsx", "QA Table file")
+	keyFile      = flag.String("key-file", "./key", "Key file for encryption")
+	dbPath       = flag.String("db-path", "./db", "DB file path")
 )
 
 // cmdConfigSetToGlobal store command config to global config.
@@ -32,6 +37,7 @@ func cmdConfigSetToGlobal(cfg *config.Config) {
 		key = []byte("Golang is the best language!@#$%")
 	}
 	cfg.Encryption = &aes.Aes{PrivateKey: key}
+	cfg.DBPath = *dbPath
 }
 
 func main() {
@@ -45,7 +51,15 @@ func main() {
 	// Set random seed
 	rand.Seed(time.Now().UnixNano())
 	// Start dump server
-	dumpserver.Run()
+	transmit.Run()
+	// Init storage
+	cfg := config.GetGlobalConfig()
+	db, err := leveldb.OpenFile(cfg.DBPath, nil)
+	if err != nil {
+		fmt.Println("Initialize storage failed!", err)
+		os.Exit(1)
+	}
+	store.InitializeStorage(&ldb.LevelDB{DB: db})
 	// Start web server
 	router := gin.Default()
 	// Set a lower memory limit for multipart forms (default is 32 MiB)
@@ -56,8 +70,10 @@ func main() {
 		group.GET("/:pic", handle.GenerateQuestion)
 		group.POST("/:pic/:sCode", handle.CheckAndGetPic)
 	}
+	router.POST("/register", handle.RegisterWeChatWebhook)
+	router.POST("/result", handle.RegisterResult)
 	handle.CleanTimeUpVerifiedInfo()
-	err := router.Run(":" + strconv.Itoa(config.GetGlobalConfig().WebPort))
+	err = router.Run(":" + strconv.Itoa(cfg.WebPort))
 	if err != nil {
 		return
 	}
