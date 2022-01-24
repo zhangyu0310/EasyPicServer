@@ -15,24 +15,30 @@ type Iterator struct {
 	Iter *iterator.Iterator
 }
 
-func (db *LevelDB) Init(options ...interface{}) (err error) {
-	db.DB, err = leveldb.OpenFile(options[0].(string),
-		(options[1]).(*opt.Options))
-	return
-}
-
 func (db *LevelDB) Get(key []byte, options ...interface{}) (value []byte, err error) {
-	value, err = db.DB.Get(key, options[0].(*opt.ReadOptions))
+	if options[0] != nil {
+		value, err = db.DB.Get(key, options[0].(*opt.ReadOptions))
+	} else {
+		value, err = db.DB.Get(key, nil)
+	}
 	return
 }
 
 func (db *LevelDB) Set(key []byte, value []byte, options ...interface{}) (err error) {
-	err = db.DB.Put(key, value, options[0].(*opt.WriteOptions))
+	if options[0] != nil {
+		err = db.DB.Put(key, value, options[0].(*opt.WriteOptions))
+	} else {
+		err = db.DB.Put(key, value, nil)
+	}
 	return
 }
 
 func (db *LevelDB) Delete(key []byte, options ...interface{}) (err error) {
-	err = db.DB.Delete(key, options[0].(*opt.WriteOptions))
+	if options[0] != nil {
+		err = db.DB.Delete(key, options[0].(*opt.WriteOptions))
+	} else {
+		err = db.DB.Delete(key, nil)
+	}
 	return
 }
 
