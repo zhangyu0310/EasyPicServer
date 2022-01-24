@@ -70,7 +70,7 @@ func main() {
 		group.GET("/:pic", handle.GenerateQuestion)
 		group.POST("/:pic/:sCode", handle.CheckAndGetPic)
 	}
-	router.POST("/register", handle.RegisterWeChatWebhook)
+	router.GET("/register", handle.RegisterWeChatWebhook)
 	router.POST("/result", handle.RegisterResult)
 	handle.CleanTimeUpVerifiedInfo()
 	err = router.Run(":" + strconv.Itoa(cfg.WebPort))

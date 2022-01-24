@@ -16,3 +16,6 @@ vendor/
 
 # IDE directories
 .idea
+
+# DB directories
+db/
