@@ -48,7 +48,7 @@ func (ds *dumpServer) SendSuTu(_ context.Context, req *SeTuRequest) (*SeTuReply,
 		Image: &Image{Base64: req.PicBase64, Md5: req.PicMd5}}
 	s := *store.GetStorage()
 	it := s.Iterator()
-	for ; it.Valid(); it.Next() {
+	for it.First(); it.Valid(); it.Next() {
 		webhook := string(it.Key())
 		value := binary.BigEndian.Uint32(it.Value())
 		oldV := value
