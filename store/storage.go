@@ -4,7 +4,7 @@ type Storage interface {
 	Get([]byte, ...interface{}) ([]byte, error)
 	Set([]byte, []byte, ...interface{}) error
 	Delete([]byte, ...interface{}) error
-	Iterator() Iterator
+	Iterator(options ...interface{}) Iterator
 }
 
 type Iterator interface {

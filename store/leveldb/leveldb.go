@@ -5,6 +5,7 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/iterator"
 	"github.com/syndtr/goleveldb/leveldb/opt"
+	"github.com/syndtr/goleveldb/leveldb/util"
 )
 
 type LevelDB struct {
@@ -16,7 +17,7 @@ type Iterator struct {
 }
 
 func (db *LevelDB) Get(key []byte, options ...interface{}) (value []byte, err error) {
-	if options[0] != nil {
+	if len(options) > 0 && options[0] != nil {
 		value, err = db.DB.Get(key, options[0].(*opt.ReadOptions))
 	} else {
 		value, err = db.DB.Get(key, nil)
@@ -25,7 +26,7 @@ func (db *LevelDB) Get(key []byte, options ...interface{}) (value []byte, err er
 }
 
 func (db *LevelDB) Set(key []byte, value []byte, options ...interface{}) (err error) {
-	if options[0] != nil {
+	if len(options) > 0 && options[0] != nil {
 		err = db.DB.Put(key, value, options[0].(*opt.WriteOptions))
 	} else {
 		err = db.DB.Put(key, value, nil)
@@ -34,7 +35,7 @@ func (db *LevelDB) Set(key []byte, value []byte, options ...interface{}) (err er
 }
 
 func (db *LevelDB) Delete(key []byte, options ...interface{}) (err error) {
-	if options[0] != nil {
+	if len(options) > 0 && options[0] != nil {
 		err = db.DB.Delete(key, options[0].(*opt.WriteOptions))
 	} else {
 		err = db.DB.Delete(key, nil)
@@ -42,8 +43,16 @@ func (db *LevelDB) Delete(key []byte, options ...interface{}) (err error) {
 	return
 }
 
-func (db *LevelDB) Iterator() store.Iterator {
-	it := db.DB.NewIterator(nil, nil)
+func (db *LevelDB) Iterator(options ...interface{}) store.Iterator {
+	var slice *util.Range
+	var ro *opt.ReadOptions
+	if len(options) > 0 && options[0] != nil {
+		slice = options[0].(*util.Range)
+	}
+	if len(options) > 1 && options[1] != nil {
+		ro = options[1].(*opt.ReadOptions)
+	}
+	it := db.DB.NewIterator(slice, ro)
 	return &Iterator{Iter: &it}
 }
 

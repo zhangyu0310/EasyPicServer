@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"easyPicServer/config"
 	"easyPicServer/encrypt/aes"
 	"easyPicServer/handle"
@@ -8,12 +9,15 @@ import (
 	ldb "easyPicServer/store/leveldb"
 	"easyPicServer/transmit"
 	"flag"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/syndtr/goleveldb/leveldb"
+	"log"
 	"math/rand"
+	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 )
 
@@ -56,7 +60,7 @@ func main() {
 	cfg := config.GetGlobalConfig()
 	db, err := leveldb.OpenFile(cfg.DBPath, nil)
 	if err != nil {
-		fmt.Println("Initialize storage failed!", err)
+		log.Println("Initialize storage failed!", err)
 		os.Exit(1)
 	}
 	store.InitializeStorage(&ldb.LevelDB{DB: db})
@@ -73,8 +77,29 @@ func main() {
 	router.GET("/register", handle.RegisterWeChatWebhook)
 	router.POST("/result", handle.RegisterResult)
 	handle.CleanTimeUpVerifiedInfo()
-	err = router.Run(":" + strconv.Itoa(cfg.WebPort))
-	if err != nil {
-		return
+	srv := &http.Server { Addr: ":" + strconv.Itoa(cfg.WebPort), Handler: router}
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("listen: %s\n", err)
+		}
+	}()
+
+	quit := make(chan os.Signal)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	log.Println("Shutdown Server ...")
+	if err := db.Close(); err != nil {
+		log.Fatal("LevelDB close failed.", err)
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatal("Server Shutdown:", err)
+	}
+	select {
+	case <-ctx.Done():
+		log.Println("timeout of 5 seconds.")
+	}
+	log.Println("Server exiting")
 }

@@ -2,8 +2,8 @@ package config
 
 import (
 	"easyPicServer/encrypt"
-	"fmt"
 	"github.com/tealeg/xlsx"
+	"log"
 	"os"
 	"sync/atomic"
 )
@@ -53,12 +53,12 @@ func StoreGlobalConfig(config *Config) {
 func InitQaMapFromExcel(config *Config) {
 	xlFile, err := xlsx.OpenFile(config.QaFilePath)
 	if err != nil {
-		fmt.Println("Open QA Table failed.", err)
+		log.Println("Open QA Table failed.", err)
 		os.Exit(1)
 	}
 	sheet := xlFile.Sheets[0]
 	if sheet == nil {
-		fmt.Println("First sheet is nil.")
+		log.Println("First sheet is nil.")
 		os.Exit(1)
 	}
 	config.QaMap = make(map[int]QATable)
@@ -68,7 +68,7 @@ func InitQaMapFromExcel(config *Config) {
 		}
 		id, err := row.Cells[0].Int()
 		if err != nil {
-			fmt.Println("Get Question ID failed.")
+			log.Println("Get Question ID failed.")
 			os.Exit(1)
 		}
 		var answers []string

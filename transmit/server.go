@@ -5,11 +5,12 @@ import (
 	"context"
 	"easyPicServer/config"
 	"easyPicServer/store"
+	"encoding/binary"
 	"encoding/json"
-	"fmt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
 	"os"
@@ -44,20 +45,36 @@ func (ds *dumpServer) SendSuTu(_ context.Context, req *SeTuRequest) (*SeTuReply,
 			Articles: articles}}
 	picMsg := BotMsgReq{MsgType: BotMsgImage,
 		Image: &Image{Base64: req.PicBase64, Md5: req.PicMd5}}
-	for it := (*store.GetStorage()).Iterator(); it.Valid(); it.Next() {
-		err := postSetuToWeChat(string(it.Key()), txtMsg)
+	s := *store.GetStorage()
+	it := s.Iterator()
+	for ; it.Valid(); it.Next() {
+		webhook := string(it.Key())
+		value := binary.BigEndian.Uint32(it.Value())
+		oldV := value
+		err := postSetuToWeChat(webhook, txtMsg)
 		if err != nil {
-			fmt.Println("Post txt msg failed.")
+			value++
+			log.Println("Post txt msg failed.", webhook)
 		}
-		err = postSetuToWeChat(string(it.Key()), newsMsg)
+		err = postSetuToWeChat(webhook, newsMsg)
 		if err != nil {
-			fmt.Println("Post txt msg failed.")
+			value++
+			log.Println("Post news msg failed.", webhook)
 		}
-		err = postSetuToWeChat(string(it.Key()), picMsg)
+		err = postSetuToWeChat(webhook, picMsg)
 		if err != nil {
-			fmt.Println("Post txt msg failed.")
+			value++
+			log.Println("Post image msg failed.", webhook)
+		}
+		if oldV != value {
+			v := make([]byte, 4)
+			binary.BigEndian.PutUint32(v, value)
+			if err := s.Set(it.Key(), v, nil); err != nil {
+				log.Println("Set post failure value failed.")
+			}
 		}
 	}
+	it.Release()
 	var reply SeTuReply
 	reply.ErrMessage = "Success."
 	return &reply, nil
@@ -67,7 +84,7 @@ func Run() {
 	cfg := config.GetGlobalConfig()
 	listen, err := net.Listen("tcp", ":"+strconv.Itoa(cfg.DumpPort))
 	if err != nil {
-		fmt.Println("Dump server start failed.", err)
+		log.Println("Dump server start failed.", err)
 		os.Exit(1)
 	}
 	options := []grpc.ServerOption{
@@ -84,7 +101,7 @@ func Run() {
 	go func() {
 		err = server.Serve(listen)
 		if err != nil {
-			fmt.Println("Dump Server run failed.", err)
+			log.Println("Dump Server run failed.", err)
 		}
 	}()
 }
@@ -93,19 +110,19 @@ func Run() {
 func postSetuToWeChat(wechatUrl string, post BotMsgReq) (err error) {
 	postStr, err := json.Marshal(post)
 	if err != nil {
-		fmt.Println("Json marshal post failed.", err)
+		log.Println("Json marshal post failed.", err)
 		return
 	}
 	respPost, err := http.Post(wechatUrl, "application/json", bytes.NewBuffer(postStr))
 	if err != nil {
-		fmt.Println("Post to wechat failed", err)
+		log.Println("Post to wechat failed", err)
 		return
 	}
 	msg, err := ioutil.ReadAll(respPost.Body)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
-	fmt.Println(string(msg))
+	log.Println(string(msg))
 	_ = respPost.Body.Close()
 	return
 }
