@@ -17,6 +17,7 @@ type Config struct {
 	QaMap        map[int]QATable
 	Encryption   encrypt.Encryption
 	DBPath       string
+	CleanUpCount uint32
 }
 
 type QATable struct {

@@ -28,6 +28,7 @@ var (
 	qaTableFile  = flag.String("qa-table-file", "./QATable.xlsx", "QA Table file")
 	keyFile      = flag.String("key-file", "./key", "Key file for encryption")
 	dbPath       = flag.String("db-path", "./db", "DB file path")
+	cleanUpCount = flag.Uint("clean-up-count", 15, "Count of post failed to clean up webhook.")
 )
 
 // cmdConfigSetToGlobal store command config to global config.
@@ -42,6 +43,7 @@ func cmdConfigSetToGlobal(cfg *config.Config) {
 	}
 	cfg.Encryption = &aes.Aes{PrivateKey: key}
 	cfg.DBPath = *dbPath
+	cfg.CleanUpCount = uint32(*cleanUpCount)
 }
 
 func main() {

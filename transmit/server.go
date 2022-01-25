@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 )
 
 type dumpServer struct{}
@@ -104,6 +105,13 @@ func Run() {
 			log.Println("Dump Server run failed.", err)
 		}
 	}()
+
+	go func() {
+		for {
+			time.Sleep(time.Hour * 3)
+			checkInvalidWebhook()
+		}
+	}()
 }
 
 // postSetuToWeChat post setu to WeChat
@@ -125,4 +133,24 @@ func postSetuToWeChat(wechatUrl string, post BotMsgReq) (err error) {
 	log.Println(string(msg))
 	_ = respPost.Body.Close()
 	return
+}
+
+func checkInvalidWebhook() {
+	cfg := config.GetGlobalConfig()
+	s := *store.GetStorage()
+	it := s.Iterator()
+	for ; it.Valid(); it.Next() {
+		txtMsg := BotMsgReq{MsgType: BotMsgText,
+			Text: &Text{Content: "Webhook发送失败率过高，已经删除该记录。"}}
+		value := binary.BigEndian.Uint32(it.Value())
+		if value > cfg.CleanUpCount {
+			if err := s.Delete(it.Key()); err != nil {
+				log.Println("Delete Invalid Webhook failed.", err)
+			}
+			if err := postSetuToWeChat(string(it.Value()), txtMsg); err != nil {
+				log.Println("Post Delete Invalid Webhook msg failed.", err)
+			}
+		}
+	}
+	it.Release()
 }
