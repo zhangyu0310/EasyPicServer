@@ -16,7 +16,9 @@ type Config struct {
 	QaFilePath   string
 	QaMap        map[int]QATable
 	Encryption   encrypt.Encryption
-	DBPath       string
+	DBType       string
+	DBAddr       string
+	DBPassword   string
 	CleanUpCount uint32
 }
 

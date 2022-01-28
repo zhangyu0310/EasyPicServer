@@ -1,10 +1,12 @@
 package store
 
 type Storage interface {
+	Init(...interface{}) error
 	Get([]byte, ...interface{}) ([]byte, error)
 	Set([]byte, []byte, ...interface{}) error
 	Delete([]byte, ...interface{}) error
 	Iterator(options ...interface{}) Iterator
+	Close(...interface{}) error
 }
 
 type Iterator interface {

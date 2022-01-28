@@ -15,7 +15,7 @@ func RegisterWeChatWebhook(context *gin.Context) {
 func RegisterResult(context *gin.Context) {
 	webhook := context.PostForm("webhook")
 	if !strings.HasPrefix(webhook, "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=") {
-		context.String(http.StatusOK, "企业微信webhook有误，查证后填写！" +
+		context.String(http.StatusOK, "企业微信webhook有误，查证后填写！"+
 			"(应当为'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key='开头)")
 		return
 	}
